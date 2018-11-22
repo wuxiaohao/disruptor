@@ -208,8 +208,8 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
     @Override
     public void publish(long sequence)
     {
-        cursor.set(sequence);
-        waitStrategy.signalAllWhenBlocking();
+        cursor.set(sequence); //修改游标
+        waitStrategy.signalAllWhenBlocking(); //如果消费者阻塞，则唤醒
     }
 
     /**

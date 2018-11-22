@@ -25,7 +25,7 @@ package com.lmax.disruptor;
  */
 public final class YieldingWaitStrategy implements WaitStrategy
 {
-    private static final int SPIN_TRIES = 100;
+    private static final int SPIN_TRIES = 100; //循环的阈值
 
     @Override
     public long waitFor(
@@ -35,7 +35,8 @@ public final class YieldingWaitStrategy implements WaitStrategy
         long availableSequence;
         int counter = SPIN_TRIES;
 
-        while ((availableSequence = dependentSequence.get()) < sequence)
+        //自旋锁
+        while ((availableSequence = dependentSequence.get()) < sequence) //判断生产者序号是否小于消费者序号，如果小于则自旋
         {
             counter = applyWaitMethod(barrier, counter);
         }
@@ -53,13 +54,14 @@ public final class YieldingWaitStrategy implements WaitStrategy
     {
         barrier.checkAlert();
 
-        if (0 == counter)
+        if (0 == counter)//等于0则让出CPU资源给其他线程
         {
+            //调用yield方法并不会让线程进入阻塞状态，而是让线程重回就绪状态，它只需要等待重新获取CPU执行时间
             Thread.yield();
         }
         else
         {
-            --counter;
+            --counter; //小于100则一直循环
         }
 
         return counter;

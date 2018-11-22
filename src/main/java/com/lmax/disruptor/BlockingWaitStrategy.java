@@ -26,6 +26,8 @@ public final class BlockingWaitStrategy implements WaitStrategy
 {
     private final Object mutex = new Object();
 
+
+    //唤醒策略
     @Override
     public long waitFor(long sequence, Sequence cursorSequence, Sequence dependentSequence, SequenceBarrier barrier)
         throws AlertException, InterruptedException
@@ -35,10 +37,10 @@ public final class BlockingWaitStrategy implements WaitStrategy
         {
             synchronized (mutex)
             {
-                while (cursorSequence.get() < sequence)
+                while (cursorSequence.get() < sequence) //如果生产者序号<消费者序号 说明消费者进度比生产者快
                 {
                     barrier.checkAlert();
-                    mutex.wait();
+                    mutex.wait(); //阻塞等待生产者投递消息
                 }
             }
         }
@@ -52,12 +54,13 @@ public final class BlockingWaitStrategy implements WaitStrategy
         return availableSequence;
     }
 
+    //唤醒策略
     @Override
     public void signalAllWhenBlocking()
     {
         synchronized (mutex)
         {
-            mutex.notifyAll();
+            mutex.notifyAll();//唤醒消费者
         }
     }
 
