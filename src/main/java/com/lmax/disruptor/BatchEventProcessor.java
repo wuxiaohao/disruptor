@@ -34,12 +34,12 @@ public final class BatchEventProcessor<T>
     private static final int HALTED = IDLE + 1;
     private static final int RUNNING = HALTED + 1;
 
-    private final AtomicInteger running = new AtomicInteger(IDLE);
-    private ExceptionHandler<? super T> exceptionHandler = new FatalExceptionHandler();
+    private final AtomicInteger running = new AtomicInteger(IDLE); //当前线程是否运行
+    private ExceptionHandler<? super T> exceptionHandler = new FatalExceptionHandler(); //异常Handler（用于做补偿）
     private final DataProvider<T> dataProvider;
     private final SequenceBarrier sequenceBarrier;
-    private final EventHandler<? super T> eventHandler;
-    private final Sequence sequence = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    private final EventHandler<? super T> eventHandler; //消费者接口
+    private final Sequence sequence = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);//假设生产投5个消息，则sequence=4，因为从-1开始
     private final TimeoutHandler timeoutHandler;
     private final BatchStartAware batchStartAware;
 
@@ -113,11 +113,11 @@ public final class BatchEventProcessor<T>
     @Override
     public void run()
     {
-        if (running.compareAndSet(IDLE, RUNNING))
+        if (running.compareAndSet(IDLE, RUNNING)) //判断是否已经运行
         {
-            sequenceBarrier.clearAlert();
+            sequenceBarrier.clearAlert(); //清空序号栅栏
 
-            notifyStart();
+            notifyStart(); //唤醒线程
             try
             {
                 if (running.get() == RUNNING)
@@ -150,13 +150,15 @@ public final class BatchEventProcessor<T>
     private void processEvents()
     {
         T event = null;
+
+        //获取消费者下一个可用序号
         long nextSequence = sequence.get() + 1L;
 
         while (true)
         {
             try
             {
-                final long availableSequence = sequenceBarrier.waitFor(nextSequence);
+                final long availableSequence = sequenceBarrier.waitFor(nextSequence); //返回可用序号
                 if (batchStartAware != null)
                 {
                     batchStartAware.onBatchStart(availableSequence - nextSequence + 1);
@@ -164,12 +166,15 @@ public final class BatchEventProcessor<T>
 
                 while (nextSequence <= availableSequence)
                 {
+                    //先把前面的消息消费
                     event = dataProvider.get(nextSequence);
+
+                    //调用消费者handle消费数据
                     eventHandler.onEvent(event, nextSequence, nextSequence == availableSequence);
                     nextSequence++;
                 }
 
-                sequence.set(availableSequence);
+                sequence.set(availableSequence); //保存下一个可用序号
             }
             catch (final TimeoutException e)
             {

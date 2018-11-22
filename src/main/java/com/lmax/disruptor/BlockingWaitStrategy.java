@@ -29,9 +29,15 @@ public final class BlockingWaitStrategy implements WaitStrategy
 
     //唤醒策略
     @Override
-    public long waitFor(long sequence, Sequence cursorSequence, Sequence dependentSequence, SequenceBarrier barrier)
+    public long  waitFor(long sequence, Sequence cursorSequence, Sequence dependentSequence, SequenceBarrier barrier)
         throws AlertException, InterruptedException
     {
+
+        //sequence：下一个消费者想要的序号
+        //cursorSequence：当前ringbuffer最大序号 比如投递了10个消息，则是9（从-1开始）
+        //dependentSequence：
+
+
         long availableSequence;
         if (cursorSequence.get() < sequence)
         {
@@ -51,7 +57,7 @@ public final class BlockingWaitStrategy implements WaitStrategy
             ThreadHints.onSpinWait();
         }
 
-        return availableSequence;
+        return availableSequence; //返回可用序号
     }
 
     //唤醒策略

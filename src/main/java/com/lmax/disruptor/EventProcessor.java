@@ -38,5 +38,6 @@ public interface EventProcessor extends Runnable
      */
     void halt();
 
+    //判断当前线程是否处于运行状态
     boolean isRunning();
 }

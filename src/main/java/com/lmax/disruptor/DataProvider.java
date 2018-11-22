@@ -17,5 +17,6 @@ package com.lmax.disruptor;
 
 public interface DataProvider<T>
 {
+    //获取消息数据
     T get(long sequence);
 }

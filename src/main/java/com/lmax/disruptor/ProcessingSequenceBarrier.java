@@ -47,12 +47,14 @@ final class ProcessingSequenceBarrier implements SequenceBarrier
         }
     }
 
+
     @Override
-    public long waitFor(final long sequence)
+    public long waitFor(final long sequence) //sequence：下一个消费者想要的序号
         throws AlertException, InterruptedException, TimeoutException
     {
         checkAlert();
 
+        //具体的消费者等待策略
         long availableSequence = waitStrategy.waitFor(sequence, cursorSequence, dependentSequence, this);
 
         if (availableSequence < sequence)
