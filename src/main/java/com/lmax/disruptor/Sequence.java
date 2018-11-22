@@ -30,6 +30,8 @@ class Value extends LhsPadding
     protected volatile long value;
 }
 
+//Sequence继承自RhsPadding，而RhsPadding继承了Value，且填充了7个long类型，value继承了LhsPadding
+//这样Value就被其他一些无用的long变量给填充了。这样你修改Value的时候，就不会影响到其他变量的缓存行
 class RhsPadding extends Value
 {
     protected long p9, p10, p11, p12, p13, p14, p15;
