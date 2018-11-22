@@ -79,6 +79,10 @@ abstract class RingBufferFields<E> extends RingBufferPad
         fill(eventFactory);
     }
 
+    /**
+     * 内存预加载机制
+     * @param eventFactory
+     */
     private void fill(EventFactory<E> eventFactory)
     {
         for (int i = 0; i < bufferSize; i++)
@@ -90,6 +94,7 @@ abstract class RingBufferFields<E> extends RingBufferPad
     @SuppressWarnings("unchecked")
     protected final E elementAt(long sequence)
     {
+        //初始化一个空对象
         return (E) UNSAFE.getObject(entries, REF_ARRAY_BASE + ((sequence & indexMask) << REF_ELEMENT_SHIFT));
     }
 }

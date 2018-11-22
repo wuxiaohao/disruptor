@@ -114,33 +114,38 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
      * @see Sequencer#next(int)
      */
     @Override
-    public long next(int n)
+    public long next(int n)//n每次都是1？
     {
         if (n < 1 || n > bufferSize)
         {
             throw new IllegalArgumentException("n must be > 0 and < bufferSize");
         }
 
-        long nextValue = this.nextValue;
+        long nextValue = this.nextValue; // init -1
 
-        long nextSequence = nextValue + n;
-        long wrapPoint = nextSequence - bufferSize;
-        long cachedGatingSequence = this.cachedValue;
+        long nextSequence = nextValue + n; // -1 + 1 = 0
+        long wrapPoint = nextSequence - bufferSize; //等于负数意味着没有绕过ringBuffer环
+        long cachedGatingSequence = this.cachedValue; //获取最小消费者序号
 
-        if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue)
+        if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue) //
         {
             cursor.setVolatile(nextValue);  // StoreLoad fence
 
-            long minSequence;
+            long minSequence;//最小序号
+
+            //自旋操作（替代CAS）
+            //生产者序号大于消费者中最小序号，则自旋，避免生产者速度过快，将还没来得及消费的消息覆盖
             while (wrapPoint > (minSequence = Util.getMinimumSequence(gatingSequences, nextValue)))
             {
+                //挂起一纳秒，下个版本优化？
                 LockSupport.parkNanos(1L); // TODO: Use waitStrategy to spin?
             }
 
+            //缓存最小消费者序号
             this.cachedValue = minSequence;
         }
 
-        this.nextValue = nextSequence;
+        this.nextValue = nextSequence; //保存sequence
 
         return nextSequence;
     }
